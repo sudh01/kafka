@@ -1,0 +1,546 @@
+Introduction
+Features
+Architecture
+Key terminologies
+Installation and pre-requisites
+Setting up Single node Kafka Cluster
+Setting up multi-node Kafka Cluster
+Zookeeper
+  Setting up single node zookeeper
+  Setting up zookeeper cluster
+Producer
+Consumer
+
+Kafka Security
+ PLAINTEXT
+ SASL_PLAINTEXT
+ SSL(TLS encryption)
+ SASL_SSL
+
+Open source library
+  Producer API
+  Consumer API
+  Admin API
+
+Cluster Monitoring
+  JMX exporter
+  Prometheus
+  Grafana
+
+
+KAfka is a distributed message streaming platform
+ uses pulish and subscribe mechanism to steam
+ the records.
+
+Kafka is a open source
+
+developed by Linkedin later donated to Apache foundation
+
+
+
+- Distributed  
+   db1 db2 db3 ...
+   db1R db2R db3R ...
+- Message streaming platform
+
+  source1 source2 source2
+       multiple connections - Issue
+target1 target2 target3 target4
+
+
+ source1 source2 source2
+    Messaging System
+target1 target2 target3 target4
+
+=====================
+Messaging systems
+ Two types
+   1. Point-Point Messaging System
+      - msgs are persisted in a Queue
+      - A particular msg can consumed by a max of one consumer
+      - No time dependency laid for consumer to consume msg
+      - when consumer receives the msg, it will send an ack back to sender
+
+   2. Publish-Subscribe Messaging System
+      - msg's are persisted in a topic.
+      - particular msg can be consumed by any no. of consumers
+      - time dependency laid for consumer to consume the msg
+      - after receiving msg, consumer doesn't send ack
+
+===================
+
+- Topics
+A stream of messages belonging to a particular category is called topic
+It's logical feed name to which records(messages) are published
+Unique identifier of a topic is its name.
+We can create as many topics as we want but name should be different.
+
+Producer1     Producer2    Producer3 ...
+   
+      Kafka Cluseter
+        Topic	      Topic	    Topic
+         Partition      Partition     Partition
+         Partition      Partition     Partition
+	 Partition      Partition     Partition
+         Partition      Partition     Partition
+         Partition      Partition     Partition
+         Partition      Partition     Partition
+
+Consumer1     Consumer2    Consumer3 ... 
+
+
+=================
+- Partitions
+Topics are split in partitions
+All the messages within a partition are ordered and immutable
+Each message within a partition has a unique id associated known as Offset
+
+	  Topic	      
+         Partition1    
+         Partition2    
+	 Partition3      
+         Partition4      
+         Partition5      
+         Partition6
+
+Partitions are distributed in brokers in round robbin fasion  
+
+      Broker	      Broker	    Broker
+         Partition1      Partition2     Partition3
+         Partition4      Partition5     Partition6
+         Partition2(R)      Partition1(R)     Partition1(R)
+         Partition3(R)      Partition3(R)     Partition2(R)
+
+     Replication factor = 3 (1 partition to be replicated 3 times )
+
+===============
+         
+- Replicas are backups of a partition
+  Replicas are never read or write data
+  they are used to prevent data loss - Fault tolerance
+
+================
+- Producers 
+  generates topic level or partition level messages using producer api
+
+- Consumers
+   consumes  topic level or partition level messages.
+   consumers are always associtated with one consumer group
+   
+- Consumer group
+   is a set of consumers which cooperate to consume data from some topics
+
+================
+- Broker
+Brokers are simple software processes who maintain and manage the published messages.
+Also known as kafka servers
+Brokers also manage consumer offsets and are responsible for the delivery of messages to the right consumers.
+A set of brokers who are communicating with each other to perform the management and maintenance task are collectively known as Kafka Cluster.
+We can add more brokers in a running cluster without any downtime.
+
+================
+- Zookeeper 
+
+Zookeeper is used to monitor kafka cluster and co-ordinate with each broker
+Keep all the metadata info related to kafka cluster in the form of a key-value pair.
+
+Metadata includes
+  - configuration info
+  - Health status of each broker.
+
+It is used for the controller election within kafka cluster
+
+================
+- Zookeeper Cluster/Zookeeper Ensemble
+ A set of zookeepers nodes working together to manage other
+distributed systems is known as zookeeper cluster.
+
+
+
+===================
+Kafka Features
+
+1. Scalable
+   Horizontal scaling is done by adding new brokers to the 
+    existing cluster.
+
+2. Fault Tolerance
+    Kafka is distributed nature.
+
+3. Durable
+    Kafka uses 'Distributed commit log' which means messages persists on disk as fast as possible.
+
+4. Performance
+    Kafka has 'high throughput' for both publishing and subscribing messages.
+
+5. No Data loss
+    it ensures no data loss if we configure it properly
+
+6. Zero Down time
+    ensure zero down time when required number of brokers are 
+   present in the cluster.
+
+7. Reliablity
+
+===========
+Producers --> Kafka Cluster
+
+Connectors <--> Kafka Cluster
+
+Kafka Culster --> Consumers
+
+Kafka Cluster <--> Stream processors 
+
+======================================================
+Kafka Installation
+Zookeeper Installation
+Running Single node Kafka cluster.
+Running Single node Zookeeper cluster.
+
+Installation
+- Kafka
+ https://kafka.apache.org/downloads
+  latest version - 3.6.1
+
+Binary Downloads
+Scala 2.13  - kafka_2.13-3.6.1.tgz (asc, sha512)
+
+- ZooKeeper to 3.8.3 - release notes
+https://dlcdn.apache.org/zookeeper/zookeeper-3.8.3/apache-zookeeper-3.8.3-bin.tar.gz
+
+- cmd prompt
+wget 
+https://dlcdn.apache.org/zookeeper/zookeeper-3.8.3/apache-zookeeper-3.8.3-bin.tar.gz
+
+OR
+
+download & run below command
+tar -xf apache-zookeeper-3.8.3-bin.tar.gz
+
+- Start zookeeper server
+..\apache-zookeeper-3.8.3-bin\bin
+zkServer.sh
+
+ - note: when you start zk server, it looks for
+ zoo.cfg file in config folder
+ - copy zoo_sample.cfg and rename to zoo.cfg
+
+tickTime=2000
+initLimit=10
+syncLimit=5
+dataDir=/tmp/zookeeper
+clientPort=2181
+maxClientCnxns=60
+4lw.commands.whitelist=*
+
+- start zookeeper
+bin/zkServer.sh start
+
+- stop zookeeper
+bin/zkServer.sh start
+
+- status
+echo stat | nc localhost 2181
+
+  - standalone
+
+==========
+Kafka
+
+- extract kafka tar file
+  tar -xf ..tar.gz
+
+
+- server.properties
+broker.id=1
+listeners=PLAINTEXT://localhost:9092
+log.dirs=/tmp/kafka-logs
+log.retention.hours=168 ;// 168 hrs=7 days
+zookeeper.connect=localhost:2181
+
+- start kafka
+bin/kafka-server-start.sh config/server.properties 
+
+- know kafka server status
+echo dump | nc localhost 2181 | grep brokers
+
+
+==================
+Kafka Topics
+
+- particular stream of data
+- topic is like a table db without constraints
+- you can have as many topics as you want
+- A topic is identified by its name
+- Any kind of message format
+- seq of msgs is called data stream
+- you can't query topics, instead, use producers to send data
+    and use consumers to recieve data
+
+
+Partitions
+---------
+- Topics are split in partitions
+- Messages within each partition aer ordered
+- Each message within a partition gets an incremental ID called offset.
+- Kafka topics are immutable
+   once data is written into a partition, it can't be changed
+- Data is kept only for a limited time - default one week - configurable
+- Offset only have a meaning for specific partition
+- Order is guaranteed only within a partition, not across partitions
+- you can have as many partitions per topic as you want
+
+                    partition0 - 0 1 2 3 4...     writes
+Kafka Topic         partition1 - 0 1 2 3...       writes
+                    partition2 - 0 1 2 3 4 5 6... writes 
+
+
+Producers
+---------
+- Producers write data to topics
+- Producers know to which partition to write to and which broker has it
+
+                        TopicA/Partition0 - 0 1 2 3 4...     writes
+Producer(Send Data)     TopicA/partition1 - 0 1 2 3...       writes
+                        TopicA/partition2 - 0 1 2 3 4 5 6... writes 
+
+- In case of kafka broker failures, Producers will automatically recoer
+
+- Message Keys
+  * Producers can choose to send a key with the message (string, number, binary etc.,)
+  * if key=null, data is send round robin fashion
+    partion0 , partition1 ...
+  * if key!=null, then all messages for that key will always go to the 
+    same partition.
+  * a key is sent, if you need message ordering for a specific field
+
+
+
+
+
+
+
+
+
+
+
+Kafka kRaft
+============
+In 2020, Apache Kafka project started to work to remove the zookeeper
+  dependency from it
+Zookeeper show scaling issues when Kafka cluster have > 1Lac partitions
+By removing zookeeper, Apache kafka can
+ - can scale to millions of partitions
+ - Makes it easier to monitor & maintain
+ - Single security model for whole system(zookeper security not required)
+ - Single process to start with kafka
+ - Faster controller shutdown and recovery time
+
+- Kafka 3.x implements Raft protocol(KRaft) in order to replace Zookeeper
+  - Production ready since Kafka 3.3.1
+- Kafka 4.0 will be released only with KRaft(no zookeper)
+
+- One of the Kafka cluster act a leader instead of zookeeper
+
+
+
+Install Kafka Binaries
+======================
+1. Windows 10 or above
+2. WSL2 - provides linux environment
+    (Kafka is intended to be run on windows and has several issues)
+    - Open power shell as an administrator
+    - run below command
+        wsl --install -d Ubuntu
+         userName - sudheerr
+         password - passwd
+    - restart system, ubuntu start install
+    - command to run specific linux environment
+      wsl -d <Ubuntu>
+3. JDK 11 or above
+    - sudo apt update
+    - java -version
+    - sudo apt install openjdk-17-jre-headless
+4. Download latest kafka & zookeeper binaries
+5. Extract kafka & zookeeper bnaries
+   tar -xf <tar-file-name>
+6. Goto zookeeper bin folder and run below commands to start/stop zookeper
+   bin/zkServer.sh start
+      /usr/bin/java
+      ZooKeeper JMX enabled by default
+      Using config: /mnt/d/temp/kafka/apache-zookeeper-3.8.3-bin/bin/../conf/zoo.cfg
+      Starting zookeeper ... STARTED
+
+   bin/zkServer.sh stop
+      /usr/bin/java
+      ZooKeeper JMX enabled by default
+      Using config: /mnt/d/temp/kafka/apache-zookeeper-3.8.3-bin/bin/../conf/zoo.cfg
+      Stopping zookeeper ... STOPPED
+
+7. Start kafka server
+   Goto 'kafka_2.13-3.6.1' folder
+   Run below command
+      bin/kafka-server-start.sh /mnt/d/temp/kafka/kafka_2.13-3.6.1/config/server.properties
+
+ 
+8. Setup the $PATH environment variables for easy access kafka binaries (Optional)
+- Adding kafka in environment variables
+  - goto user home dir
+    cd /home/sudheerr
+
+  - open .bashrc file
+    vi .bashrc
+
+  - insert below line at the end of file
+    PATH="$PATH:/mnt/d/temp/kafka/kafka_2.13-3.6.1"
+
+
+- To know zookeeper status, run below command
+echo stat | nc localhost 2181
+
+Zookeeper version: 3.8.3-6ad6d364c7c0bcf0de452d54ebefa3058098ab56, built on 2023-10-05 10:34 UTC
+Clients:
+ /127.0.0.1:58154[0](queued=0,recved=1,sent=0)
+
+Latency min/avg/max: 0/0.0/0
+Received: 1
+Sent: 0
+Connections: 1
+Outstanding: 0
+Zxid: 0x0
+Mode: standalone
+Node count: 5
+
+
+broker.id=1
+
+
+- To know brokers info
+echo dump | nc localhost 2181 | grep brokers
+  /brokers/ids/0
+
+================================
+Kafka in KRaft Mode (Without Zookeeper)
+================================
+Kafka Kraft is production ready since - 3.3.1
+
+1. Generate cluster ID and format using 
+   kafka-storage.sh
+   bin/kafka-storage.sh random-uuid;// returns 'uuid'
+   - output: eMK-l5GwRdOzCIKTYCopsg
+
+2. Start Kafka using the binaries in another process in WSL2
+   kafka-storage.sh format -t <uuid> -c ~/kafka_2.13-3.6.1/config/kraft/server.properties
+   - bin/kafka-storage.sh format -t eMK-l5GwRdOzCIKTYCopsg -c ~/kafka_2.13-3.6.1/config/kraft/server.properties
+   - output: Formatting /tmp/kraft-combined-logs with metadata.version 3.6-IV2
+
+3. start kafka
+   bin/kafka-server-start.sh /mnt/d/temp/kafka/kafka_2.13-3.6.1/config/kraft/server.properties
+   - output: [2024-02-04 14:40:27,233] INFO [KafkaRaftServer nodeId=1] Kafka Server started (kafka.server.KafkaRaftServer)
+
+
+--------------
+Kafka Cluster
+   Broker 1
+--------------
+
+Zookeeper
+--------------
+
+
+
+=======================
+
+Kafka CLI
+==========
+kafka-topics 
+  Create, delete, describe, change a topic
+
+- Use 'kafka-topics --bootstrap-server localhost:9092'
+    instead of 'kafka-topics --zookeeper localhost:2181'
+
+
+- Kafka topic management
+  Create, List, Describe, Delete Kafka topics
+  Increase partitions in kafka topic.
+
+// Create topic
+bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic myfirst --create
+
+
+// Create topic with partitions
+bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic mythird --partitions 3 --create
+
+
+// List topics
+bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+
+// Describe topics
+bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic myfirst --describe
+- topic with 1 partition
+Topic: myfirst  TopicId: 9TAVFpaqTySl5cjcyjxTbA PartitionCount: 1       ReplicationFactor: 1    Configs: segment.bytes=1073741824
+        Topic: myfirst  Partition: 0    Leader: 1       Replicas: 1     Isr: 1
+
+- topic with 3 partitions
+bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic mythird --describe
+Topic: mythird  TopicId: fmeib8r2SI2pw4fAqTZk4A PartitionCount: 3       ReplicationFactor: 1    Configs: segment.bytes=1073741824
+        Topic: mythird  Partition: 0    Leader: 1       Replicas: 1     Isr: 1
+        Topic: mythird  Partition: 1    Leader: 1       Replicas: 1     Isr: 1
+        Topic: mythird  Partition: 2    Leader: 1       Replicas: 1     Isr: 1
+
+
+- kafka-console-producer.sh
+bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic myfirst
+>hi
+>hello
+
+- kafka-console.consumer.sh
+// read data from 'myfirst' topic
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic myfirst
+hi
+
+
+// read data from 'myfirst' topic from beginning
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic myfirst --from-beginning
+hi
+hello
+
+
+PROJECT
+======
+Wikimedia Stream    to    OpenSearch
+Kafka Producer           Kafka Consumer
+
+Wikimedia link
+  https://stream.wikimedia.org/v2/stream/recentchange
+
+Demo at 
+  https://codepen.io/Krinkle/pen/BwEKgW?editors=1010
+
+Advanced
+  Wikimedia ->Kafka Connect SSE Source connector
+     -> Kafka Cluster -> Kafka Connect ElasticSearch Sink --> OpenSearch
+              ^   
+	      |
+              v
+          Kafka Streams
+          Counter Application
+           
+
+wtc3
+ 1st floor sec
+
+Prashant/vishal/gopi
+  12 pm 
+
+mar-31
+
+unified
+  general access
+
+
+
+
+
+
+
